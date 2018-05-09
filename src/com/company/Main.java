@@ -2,8 +2,11 @@ package com.company;
 
 import dataClasses.DirectDeposit;
 
+
 import java.io.*;
 import java.nio.file.Files;
+
+import javax.crypto.SecretKey;
 
 public class Main {
 
@@ -25,17 +28,34 @@ public class Main {
 
         try {
             FileOutputStream f = new FileOutputStream(new File("testObject.txt"));
-            f.write(SerializationClass.serialization(testClass));
 
+
+            f.write(SerializationClass.serialization(testClass));
+            System.out.println("Serialized data:");
+            System.out.println(f); //Serialize
             f.close();
 
             byte[] b = Files.readAllBytes(new File("testObject.txt").toPath());
+            System.out.println("\nByte Array Data:");
+            System.out.println(b); //Convert to byte array
 
-            Object testInput =  deSerialize.DeSerialize(b);
+            //Setup encrypt
+            String xform = "DES/CBC/PKCS5Padding";
+            SecretKey finalKey = EncryptDecryptStringWithDES.generateKey();
 
-            String inputName = testInput.getClass().getSimpleName().toLowerCase();
+            //Encrypt
+            byte[] encBytes = EncryptDecryptStringWithDES.encrypt(b, finalKey, xform);
+            System.out.println("\nEncrypted data:");
+            System.out.println(encBytes);
 
-            System.out.println(inputName);
+            //Decrypt
+            byte[] decBytes = EncryptDecryptStringWithDES.decrypt(encBytes, finalKey, xform);
+            System.out.println("\nDecrypted Data:");
+            System.out.println(decBytes);
+
+            //Test it worked
+            DirectDeposit testInput = (DirectDeposit) deSerialize.DeSerialize(decBytes);
+            System.out.println(testInput.getFirstName());
 
         } catch (FileNotFoundException e) {
             System.out.println("File not found");
@@ -43,6 +63,8 @@ public class Main {
             System.out.println("Error Initializing stream");
             e.printStackTrace();
         } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
